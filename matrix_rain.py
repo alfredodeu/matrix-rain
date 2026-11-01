@@ -32,8 +32,8 @@ DEFAULTS: dict = {
     "window_size": (1280, 720),
     "trail_min": 8,            # Spurlänge in Zeichen (min/max)
     "trail_max": 32,
-    "col_speed_min": 0.5,      # Zellen pro Frame bei 30 FPS (Referenz)
-    "col_speed_max": 1.5,
+    "col_speed_min": 0.35,     # Zellen pro Frame bei 30 FPS (Referenz)
+    "col_speed_max": 1.05,
     "flicker_chance": 0.12,    # Wahrscheinlichkeit pro Spalte und Frame
     "flip_chance": 0.15,       # Anteil gespiegelter Zeichen
     "levels": 14,              # Helligkeitsstufen (0 = Kopf, Rest = Spur)

@@ -78,6 +78,29 @@ def enable_dpi_awareness() -> None:
         pass  # andere Plattformen / ältere Windows-Versionen
 
 
+def virtual_desktop() -> tuple[int, int, int, int] | None:
+    """Windows: (x, y, Breite, Höhe) des gesamten Desktops, wenn >1 Monitor angeschlossen ist."""
+    try:
+        import ctypes
+        metrics = ctypes.windll.user32.GetSystemMetrics  # type: ignore[attr-defined]
+        if metrics(80) < 2:  # SM_CMONITORS
+            return None
+        return metrics(76), metrics(77), metrics(78), metrics(79)  # SM_*VIRTUALSCREEN
+    except Exception:
+        return None
+
+
+def make_topmost(x: int, y: int, w: int, h: int) -> None:
+    """Windows: Fenster über alle anderen (auch die Taskleiste) legen."""
+    try:
+        import ctypes
+        hwnd = pygame.display.get_wm_info()["window"]
+        # HWND_TOPMOST = -1, SWP_SHOWWINDOW = 0x40
+        ctypes.windll.user32.SetWindowPos(hwnd, -1, x, y, w, h, 0x40)  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
+
 def supports_chars(font: pygame.font.Font, chars: list[str]) -> list[str]:
     """Gibt die Zeichen zurück, für die die Schrift tatsächlich ein Glyph hat."""
     ok = []
@@ -266,7 +289,14 @@ class MatrixRain:
     # -- Fenster / Layout ---------------------------------------------------
     def open_window(self) -> None:
         """(Neu) Fenster öffnen und Spalten an die Größe anpassen."""
-        if self.fullscreen:
+        desktop = virtual_desktop() if (self.fullscreen and self.args.screensaver) else None
+        if desktop:
+            # Mehrere Monitore (Bildschirmschoner): ein rahmenloses Fenster über alle
+            x, y, w, h = desktop
+            os.environ["SDL_VIDEO_WINDOW_POS"] = f"{x},{y}"
+            self.screen = pygame.display.set_mode((w, h), pygame.NOFRAME)
+            make_topmost(x, y, w, h)
+        elif self.fullscreen:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:
             self.screen = pygame.display.set_mode(DEFAULTS["window_size"])

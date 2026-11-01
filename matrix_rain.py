@@ -387,7 +387,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return args
 
 
+def windows_scr_args(argv: list[str]) -> list[str] | None:
+    """Übersetzt die Windows-Bildschirmschoner-Parameter (/s, /c, /p).
+
+    Gibt die argparse-Argumente zurück oder None, wenn nichts zu starten ist.
+    """
+    if not argv or not argv[0].startswith("/"):
+        return argv
+    mode = argv[0][:2].lower()
+    if mode == "/s":
+        return ["--screensaver"]
+    if mode == "/c":  # Einstellungen: es gibt keine, nur ein Hinweis
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(  # type: ignore[attr-defined]
+                0, "Matrix Rain hat keine Einstellungen.\n"
+                   "Optionen stehen oben in matrix_rain.py (DEFAULTS).", "Matrix Rain", 0x40)
+        except Exception:
+            pass
+        return None
+    return None  # /p (Vorschau im Dialogfenster) wird nicht unterstützt
+
+
 def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = windows_scr_args(sys.argv[1:])
+        if argv is None:
+            return 0
     args = parse_args(argv)
     if args.test_frames:
         os.environ["SDL_VIDEODRIVER"] = "dummy"  # kein Fenster nötig

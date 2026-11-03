@@ -28,7 +28,8 @@ DEFAULTS: dict = {
     "size": 20,                # Schriftgröße in Pixeln (= Zeilenhöhe)
     "color": "green",          # Startfarbschema
     "speed": 1.0,              # globaler Geschwindigkeitsfaktor
-    "fade_alpha": 70,          # Deckkraft der schwarzen Fade-Fläche (0–255)
+    "saver_fps": 30,           # Bildrate im Bildschirmschoner-Modus (spart CPU)
+    "fade_alpha": 0,           # Fade-Fläche (1–255); 0 = schwarz löschen (viel weniger CPU)
     "window_size": (1280, 720),
     "trail_min": 8,            # Spurlänge in Zeichen (min/max)
     "trail_max": 32,
@@ -178,12 +179,13 @@ class GlyphCache:
             normal: list[pygame.Surface] = []
             flipped: list[pygame.Surface] = []
             for ch in self.chars:
-                raw = self.font.render(ch, True, color)
-                cell = pygame.Surface((self.cell_w, self.cell_h), pygame.SRCALPHA)
+                # Deckend auf Schwarz: Blits sind reine Kopien statt Alpha-Mischung
+                raw = self.font.render(ch, True, color, (0, 0, 0))
+                cell = pygame.Surface((self.cell_w, self.cell_h))
                 # Zeichen in der Zelle zentrieren (zu breite Glyphen werden beschnitten)
                 cell.blit(raw, ((self.cell_w - raw.get_width()) // 2,
                                 (self.cell_h - raw.get_height()) // 2))
-                cell = cell.convert_alpha()
+                cell = cell.convert()
                 normal.append(cell)
                 flipped.append(pygame.transform.flip(cell, True, False))
             self.glyphs.append([normal, flipped])
@@ -372,7 +374,10 @@ class MatrixRain:
             self.under = None
         if not self.paused:
             step = dt * REFERENCE_FPS * self.speed
-            self.screen.blit(self.fade, (0, 0))
+            if DEFAULTS["fade_alpha"]:
+                self.screen.blit(self.fade, (0, 0))
+            else:
+                self.screen.fill((0, 0, 0))
             for col in self.columns:
                 col.update(step)
                 col.draw(self.screen, self.cache, self.cell_h)
@@ -400,7 +405,9 @@ class MatrixRain:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Matrix Digital Rain (Pygame)")
     p.add_argument("--windowed", action="store_true", help="im Fenster statt Vollbild")
-    p.add_argument("--fps", type=int, default=DEFAULTS["fps"], help="Ziel-FPS")
+    p.add_argument("--fps", type=int, default=None,
+                   help=f"Ziel-FPS (Standard {DEFAULTS['fps']}, "
+                        f"Bildschirmschoner {DEFAULTS['saver_fps']})")
     p.add_argument("--size", type=int, default=DEFAULTS["size"], help="Schriftgröße in px")
     p.add_argument("--color", choices=SCHEME_ORDER, default=DEFAULTS["color"],
                    help="Farbschema")
@@ -412,6 +419,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--test-frames", type=int, default=0, metavar="N",
                    help="headless Smoke-Test: N Frames rendern und beenden")
     args = p.parse_args(argv)
+    if args.fps is None:
+        args.fps = DEFAULTS["saver_fps"] if args.screensaver else DEFAULTS["fps"]
     args.fps = max(1, args.fps)
     args.size = max(8, args.size)
     return args

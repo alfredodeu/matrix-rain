@@ -38,9 +38,10 @@ python matrix_rain.py [--windowed] [--fps 60] [--size 20] [--color green]
 Im Ordner `web/` liegt eine Browser-Version (HTML5-Canvas, ohne Installation).
 Sie läuft auf iPad, iPhone, Mac, Windows und Linux.
 
-**Auf das iPad bringen:** Die Seite muss über `https://` erreichbar sein, z. B. über **GitHub Pages**
-(Repo → Settings → Pages → Branch wählen, Ordner `/ (root)`), dann
-`https://<benutzer>.github.io/matrix-rain/web/` in Safari öffnen.
+**Auf das iPad bringen:** Die Seite wird per GitHub Actions (`.github/workflows/pages.yml`) bei jedem Push
+auf `main` nach **GitHub Pages** veröffentlicht: `https://alfredodeu.github.io/matrix-rain/`.
+Einmalig nötig: Repo öffentlich (bei GitHub Free) und Settings → Pages → Source **„GitHub Actions“**.
+Die Adresse in Safari öffnen.
 Danach **Teilen → „Zum Home-Bildschirm“**. So startet sie wie eine App im Vollbild und läuft auch offline.
 
 Lokal testen: `cd web && python3 -m http.server 8000` und `http://localhost:8000` öffnen
